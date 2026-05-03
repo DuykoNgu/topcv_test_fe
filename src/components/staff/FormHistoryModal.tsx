@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { submissionService } from '../../services/submission.service';
 import type { FormTemplate } from '../../types/form';
+import FormFillModal from './FormFillModal';
 
 interface FormHistoryModalProps {
   form: FormTemplate;
@@ -10,19 +11,21 @@ interface FormHistoryModalProps {
 export default function FormHistoryModal({ form, onClose }: FormHistoryModalProps) {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingSubmission, setEditingSubmission] = useState<any>(null);
+
+  const fetchHistory = async () => {
+    try {
+      setLoading(true);
+      const data = await submissionService.getMySubmissionsForForm(form.id);
+      setSubmissions(data);
+    } catch (error) {
+      console.error("Failed to fetch submission history", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const data = await submissionService.getMySubmissionsForForm(form.id);
-        setSubmissions(data);
-      } catch (error) {
-        console.error("Failed to fetch submission history", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchHistory();
   }, [form.id]);
 
@@ -69,9 +72,17 @@ export default function FormHistoryModal({ form, onClose }: FormHistoryModalProp
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Lần nộp #{submissions.length - idx}
                     </span>
-                    <span className="text-xs text-gray-400 italic">
-                      {new Date(sub.submittedAt).toLocaleString('vi-VN')}
-                    </span>
+                    <div className="flex items-center">
+                      <span className="text-xs text-gray-400 italic">
+                        {new Date(sub.submittedAt).toLocaleString('vi-VN')}
+                      </span>
+                      <button
+                        onClick={() => setEditingSubmission(sub)}
+                        className="ml-4 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors px-2 py-1 rounded hover:bg-blue-50"
+                      >
+                        Sửa
+                      </button>
+                    </div>
                   </div>
                   <div className="p-4 space-y-3">
                     {sub.values.map((val: any) => (
@@ -97,6 +108,18 @@ export default function FormHistoryModal({ form, onClose }: FormHistoryModalProp
           </button>
         </div>
       </div>
+
+      {editingSubmission && (
+        <FormFillModal
+          form={form}
+          initialSubmission={editingSubmission}
+          onClose={() => setEditingSubmission(null)}
+          onSuccess={() => {
+            setEditingSubmission(null);
+            fetchHistory();
+          }}
+        />
+      )}
     </div>
   );
 }

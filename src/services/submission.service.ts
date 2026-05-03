@@ -22,6 +22,16 @@ export class SubmissionService {
     return response.data.data;
   }
 
+  async updateSubmission(submissionId: string, answers: Record<string, any>): Promise<any> {
+    const values = Object.entries(answers).map(([fieldId, value]) => ({
+      fieldId,
+      value: String(value)
+    }));
+
+    const response = await api.put<SingleResponse<any>>(`/submissions/${submissionId}`, { values });
+    return response.data.data;
+  }
+
   async getAllSubmissions(): Promise<any[]> {
     const response = await api.get<SingleResponse<any[]>>("/submissions");
     return response.data.data;

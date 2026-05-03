@@ -8,13 +8,31 @@ import { extractErrorMessage } from '../../utils/error';
 
 interface FormFillModalProps {
   form: FormTemplate;
+  initialSubmission?: any;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export default function FormFillModal({ form, onClose }: FormFillModalProps) {
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+/**
+ * Modal xử lý việc điền mới hoặc chỉnh sửa một bản ghi nộp form.
+ * Tự động nạp dữ liệu cũ nếu có initialSubmission.
+ */
+export default function FormFillModal({ form, initialSubmission, onClose, onSuccess }: FormFillModalProps) {
+  const [answers, setAnswers] = useState<Record<string, any>>(() => {
+    const initial: Record<string, any> = {};
+    if (initialSubmission && initialSubmission.values) {
+      initialSubmission.values.forEach((v: any) => {
+        initial[v.fieldId] = v.value;
+      });
+    }
+    return initial;
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  /**
+   * Xử lý thay đổi giá trị của một trường thông tin.
+   * Đồng thời xóa lỗi của trường đó nếu đang có lỗi hiển thị.
+   */
   const handleInputChange = (fieldId: string, value: any) => {
     setAnswers(prev => ({ ...prev, [fieldId]: value }));
     if (errors[fieldId]) {
@@ -26,6 +44,10 @@ export default function FormFillModal({ form, onClose }: FormFillModalProps) {
     }
   };
 
+  /**
+   * Kiểm tra tính hợp lệ của toàn bộ form trước khi nộp.
+   * @returns true nếu form hợp lệ, ngược lại trả về false.
+   */
   const validate = () => {
     const newErrors: Record<string, string> = {};
     form.fields.forEach(field => {
@@ -48,6 +70,9 @@ export default function FormFillModal({ form, onClose }: FormFillModalProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Xử lý sự kiện submit form (Gửi mới hoặc Cập nhật).
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
@@ -55,8 +80,14 @@ export default function FormFillModal({ form, onClose }: FormFillModalProps) {
       try {
         setIsSubmitting(true);
         toastId = toast.loading('Đang gửi câu trả lời...');
-        await submissionService.submitForm(form.id, answers);
-        toast.success('Gửi câu trả lời thành công!', { id: toastId });
+        if (initialSubmission) {
+          await submissionService.updateSubmission(initialSubmission.id, answers);
+          toast.success('Cập nhật câu trả lời thành công!', { id: toastId });
+        } else {
+          await submissionService.submitForm(form.id, answers);
+          toast.success('Gửi câu trả lời thành công!', { id: toastId });
+        }
+        onSuccess?.();
         onClose();
       } catch (error) {
         console.error("Submission error:", error);
@@ -130,7 +161,7 @@ export default function FormFillModal({ form, onClose }: FormFillModalProps) {
             disabled={isSubmitting}
             className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors shadow-sm font-medium disabled:opacity-50"
           >
-            {isSubmitting ? 'Đang gửi...' : 'Gửi câu trả lời'}
+            {isSubmitting ? 'Đang gửi...' : (initialSubmission ? 'Cập nhật' : 'Gửi câu trả lời')}
           </button>
         </div>
       </div>
