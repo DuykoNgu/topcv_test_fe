@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import InputField from '../ui/InputField';
 import { useNavigate } from 'react-router-dom';
+import { extractErrorMessage } from '../../utils/error';
 
 interface AuthFormProps {
   defaultMode?: 'login' | 'register';
@@ -58,8 +59,7 @@ export default function AuthForm({ defaultMode = 'login' }: AuthFormProps) {
         navigate(userRole === 'ADMIN' ? '/admin' : '/login');
       }
     } catch (err) {
-      const error = err as { response?: { data?: { error?: string } }; message?: string };
-      const message = error.response?.data?.error || error.message || 'Đã xảy ra lỗi';
+      const message = extractErrorMessage(err, 'Đã xảy ra lỗi');
       setError(message);
     } finally {
       setLoading(false);

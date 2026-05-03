@@ -4,6 +4,7 @@ import type { FormTemplate } from '../../types/form';
 import { submissionService } from '../../services/submission.service';
 import DynamicField from './DynamicField';
 import ProgressBar from './ProgressBar';
+import { extractErrorMessage } from '../../utils/error';
 
 interface FormFillModalProps {
   form: FormTemplate;
@@ -50,15 +51,16 @@ export default function FormFillModal({ form, onClose }: FormFillModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
+      let toastId: string | undefined;
       try {
         setIsSubmitting(true);
-        const toastId = toast.loading('Đang gửi câu trả lời...');
+        toastId = toast.loading('Đang gửi câu trả lời...');
         await submissionService.submitForm(form.id, answers);
         toast.success('Gửi câu trả lời thành công!', { id: toastId });
         onClose();
       } catch (error) {
         console.error("Submission error:", error);
-        toast.error('Lỗi khi gửi câu trả lời!');
+        toast.error(extractErrorMessage(error, 'Lỗi khi gửi câu trả lời!'), { id: toastId });
       } finally {
         setIsSubmitting(false);
       }

@@ -7,6 +7,7 @@ import PageLayout from '../components/layout/PageLayout';
 import PageSectionHeader from '../components/ui/PageSectionHeader';
 import FormTable from '../components/admin/FormTable';
 import FormEditorModal from '../components/admin/FormEditorModal';
+import { extractErrorMessage } from '../utils/error';
 
 export default function AdminPage() {
   const [forms, setForms] = useState<FormTemplate[]>([]);
@@ -33,7 +34,7 @@ export default function AdminPage() {
       });
     } catch (error) {
       console.error("Failed to fetch forms", error);
-      toast.error('Không thể tải danh sách form');
+      toast.error(extractErrorMessage(error, 'Không thể tải danh sách form'));
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export default function AdminPage() {
       fetchForms(); // Refresh list after save
     } catch (error) {
       console.error("Save error:", error);
-      toast.error('Lỗi khi lưu form!');
+      toast.error(extractErrorMessage(error, 'Lỗi khi lưu form!'));
     }
   };
 
@@ -73,7 +74,7 @@ export default function AdminPage() {
       fetchForms(); // Refresh list
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error('Lỗi khi xóa form!');
+      toast.error(extractErrorMessage(error, 'Lỗi khi xóa form!'));
     }
   };
 
